@@ -11,9 +11,22 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Create
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.BottomAppBar
+import androidx.compose.material3.BottomAppBarDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.FloatingActionButtonDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -24,6 +37,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -45,6 +60,8 @@ class MyViewModel: ViewModel() {
 class MainActivity : ComponentActivity(), SerialInputOutputManager.Listener {
     private lateinit var usbIoManager: SerialInputOutputManager
     private lateinit var usbSerialPort: UsbSerialPort
+    var x = mutableStateOf("Hello")
+    private var connected = mutableStateOf(false)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -52,7 +69,7 @@ class MainActivity : ComponentActivity(), SerialInputOutputManager.Listener {
         enableEdgeToEdge()
         setContent {
             CanBellUploadTheme {
-                CanBellScaffold { getData() }
+                CanBellScaffold(connected.value, x.value) { onConnect() }
             }
         }
     }
@@ -71,6 +88,8 @@ class MainActivity : ComponentActivity(), SerialInputOutputManager.Listener {
     }
 
     private fun getData() {
+        x.value = "Goodbye"
+        /*
         val usbManager = getSystemService(USB_SERVICE) as UsbManager
 
         val availableDrivers = UsbSerialProber.getDefaultProber().findAllDrivers(usbManager)
@@ -86,12 +105,17 @@ class MainActivity : ComponentActivity(), SerialInputOutputManager.Listener {
 
         usbIoManager = SerialInputOutputManager(usbSerialPort, this)
         usbIoManager.start()
+         */
+    }
+
+    private fun onConnect() {
+        connected.value = !connected.value
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CanBellScaffold(onClick: () -> Unit) {
+fun CanBellScaffold(connected: Boolean, x: String, onConnect: () -> Unit) {
     val myViewModel: MyViewModel = viewModel()
     val contents = myViewModel.txt
 
@@ -108,12 +132,42 @@ fun CanBellScaffold(onClick: () -> Unit) {
             )
         },
         bottomBar = {
-            BottomAppBar {
-                //Button(onClick = { contents = "Goodbye"}) {
-                Button(onClick = { onClick() }) {
-                    Text(text ="Hello", style = MaterialTheme.typography.bodyLarge)
+            BottomAppBar(
+                actions = {
+                    IconButton(onClick = { onConnect() }) {
+                        if (connected) {
+                            Icon(
+                                imageVector = ImageVector.vectorResource(id = R.drawable.baseline_sync_24),
+                                contentDescription = "Disconnect"
+                            )
+                        } else {
+                            Icon(
+                                imageVector = ImageVector.vectorResource(id = R.drawable.baseline_sync_disabled_24),
+                                contentDescription = "Connect"
+                            )
+                        }
+                    }
+                },
+                floatingActionButton = {
+                    FloatingActionButton(
+                        onClick = {onConnect() },
+                        containerColor = BottomAppBarDefaults.bottomAppBarFabColor,
+                        elevation = FloatingActionButtonDefaults.bottomAppBarFabElevation()
+                    ) {
+                        if (connected) {
+                            Icon(
+                                imageVector = ImageVector.vectorResource(id = R.drawable.baseline_file_download_24),
+                                contentDescription = "Download"
+                            )
+                        } else {
+                            Icon(
+                                imageVector = ImageVector.vectorResource(id = R.drawable.baseline_file_download_off_24),
+                                contentDescription = "Download"
+                            )
+                        }
+                    }
                 }
-            }
+            )
         }
     ) { innerPadding ->
         Column(
@@ -121,7 +175,7 @@ fun CanBellScaffold(onClick: () -> Unit) {
                 .verticalScroll(rememberScrollState())
                 .padding(innerPadding)
         ) {
-            Text(contents)
+            Text(x)
         }
     }
 }
@@ -130,6 +184,6 @@ fun CanBellScaffold(onClick: () -> Unit) {
 @Composable
 fun ScaffoldPreview() {
     CanBellUploadTheme {
-        CanBellScaffold {}
+        CanBellScaffold(true,"Hello") {}
     }
 }
